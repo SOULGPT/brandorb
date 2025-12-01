@@ -5,7 +5,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { createRoot } from 'react-dom/client';
 import { Canvas } from '@react-three/fiber';
 import BrandOrb from './BrandOrb';
-import MockMap from './MockMap';
+import AnimatedGameWorld from './AnimatedGameWorld';
 import { getNearbyBrandOrbs, BrandOrb as BrandOrbType } from '@/lib/firebaseService';
 import { useAuth } from '@/contexts/AuthContext';
 import { FaMap, FaGlobe } from 'react-icons/fa';
@@ -189,71 +189,7 @@ export default function GameMap({ onOrbClick }: GameMapProps) {
             </div>
 
             {useMockMap ? (
-                <div className="relative w-full h-full">
-                    <MockMap />
-
-                    {/* Simulated Markers for Demo/Mock Mode */}
-                    <div className="absolute inset-0 pointer-events-none">
-                        {/* User Avatar (Center) */}
-                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                            <div className="relative w-20 h-20">
-                                <div className="absolute inset-0 bg-cyan-500 rounded-full opacity-30 animate-ping"></div>
-                                <Canvas camera={{ position: [0, 0, 3] }} gl={{ alpha: true }}>
-                                    <ambientLight intensity={0.5} />
-                                    <BrandOrb scale={1} />
-                                </Canvas>
-                            </div>
-                        </div>
-
-                        {/* Render fetched orbs on mock map */}
-                        {orbs.length > 0 ? orbs.map((orb, i) => (
-                            <div key={orb.id}
-                                className="absolute flex flex-col items-center animate-bounce pointer-events-auto cursor-pointer"
-                                // Simple mock positioning logic for demo
-                                style={{
-                                    top: `${50 + (orb.position.latitude - lat) * 10000}%`,
-                                    left: `${50 + (orb.position.longitude - lng) * 10000}%`
-                                }}
-                                onClick={() => onOrbClick && onOrbClick(orb)}
-                            >
-                                <div className="w-12 h-12 bg-white rounded-full border-4 border-gray-800 flex items-center justify-center shadow-lg relative overflow-hidden">
-                                    <div className={`absolute top-0 left-0 w-full h-1/2 border-b-4 border-gray-800 ${orb.rarity === 'legendary' ? 'bg-yellow-500' :
-                                        orb.rarity === 'epic' ? 'bg-purple-500' :
-                                            orb.rarity === 'rare' ? 'bg-blue-500' : 'bg-red-500'
-                                        }`}></div>
-                                    <div className="w-4 h-4 bg-white border-4 border-gray-800 rounded-full z-10"></div>
-                                </div>
-                                <div className="bg-white/90 px-2 py-1 rounded text-xs font-bold mt-1 shadow-md text-black">
-                                    {orb.rarity.toUpperCase()}
-                                </div>
-                            </div>
-                        )) : (
-                            // Fallback demo orbs if no real ones found
-                            <>
-                                <div className="absolute top-1/3 left-1/3 flex flex-col items-center animate-bounce pointer-events-auto cursor-pointer"
-                                    onClick={() => onOrbClick && onOrbClick({
-                                        id: 'demo_orb',
-                                        type: 'brandorb',
-                                        position: { latitude: 0, longitude: 0 } as any,
-                                        brandId: 'demo',
-                                        campaignId: 'demo',
-                                        rarity: 'common',
-                                        xpReward: 100,
-                                        active: true,
-                                        spawnTime: new Date(),
-                                        collectedBy: []
-                                    })}
-                                >
-                                    <div className="w-12 h-12 bg-white rounded-full border-4 border-gray-800 flex items-center justify-center shadow-lg relative overflow-hidden">
-                                        <div className="absolute top-0 left-0 w-full h-1/2 bg-red-500 border-b-4 border-gray-800"></div>
-                                        <div className="w-4 h-4 bg-white border-4 border-gray-800 rounded-full z-10"></div>
-                                    </div>
-                                    <div className="bg-white/90 px-2 py-1 rounded text-xs font-bold mt-1 shadow-md text-black">DEMO ORB</div>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
+                <AnimatedGameWorld orbs={orbs} onOrbClick={onOrbClick} />
             ) : (
                 <div ref={mapContainer} className="w-full h-full bg-gray-900" />
             )}
