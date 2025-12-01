@@ -1,8 +1,11 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { FaUserCircle, FaBoxOpen, FaCamera } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { BrandOrb as BrandOrbType, collectBrandOrb } from '@/lib/firebaseService';
 
 // Dynamically import Map to avoid SSR issues with Mapbox
 const GameMap = dynamic(() => import('@/components/GameMap'), { ssr: false });
@@ -12,18 +15,42 @@ export default function Home() {
   const [showAR, setShowAR] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
+  const [selectedOrb, setSelectedOrb] = useState<BrandOrbType | undefined>(undefined);
+  const { user, userProfile, loading } = useAuth();
+  const router = useRouter();
 
-  const handleCapture = () => {
-    alert("BrandOrb Captured! +100 XP");
-    setShowAR(false);
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth');
+    }
+  }, [user, loading, router]);
+
+  const handleOrbClick = (orb: BrandOrbType) => {
+    setSelectedOrb(orb);
+    setShowAR(true);
   };
+
+  const handleCapture = async () => {
+    if (selectedOrb && user) {
+      try {
+        await collectBrandOrb(selectedOrb.id, user.uid);
+        // Show success animation or notification
+      } catch (error) {
+        console.error("Error collecting orb:", error);
+      }
+    }
+    setShowAR(false);
+    setSelectedOrb(undefined);
+  };
+
+  if (loading || !user) return null;
 
   return (
     <main className="relative w-full h-screen overflow-hidden bg-black font-sans">
 
       {/* Map Layer */}
       <div className="absolute inset-0 z-0">
-        <GameMap />
+        <GameMap onOrbClick={handleOrbClick} />
       </div>
 
       {/* Start Screen Overlay */}
@@ -77,30 +104,40 @@ export default function Home() {
           <div className="flex justify-between items-start pointer-events-auto">
             <div
               className="glass-panel p-2 flex items-center gap-3 cursor-pointer"
-              onClick={() => setShowProfile(!showProfile)}
+              onClick={() => router.push('/profile')}
             >
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center border-2 border-white">
-                <FaUserCircle className="text-white text-xl" />
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center border-2 border-white overflow-hidden">
+                {userProfile?.avatar ? (
+                  <img src={userProfile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <FaUserCircle className="text-white text-xl" />
+                )}
               </div>
               <div className="pr-2">
-                <div className="text-xs text-gray-300 font-bold">LEVEL 5</div>
-                <div className="text-sm font-bold text-white">PlayerOne</div>
+                <div className="text-xs text-gray-300 font-bold">LEVEL {userProfile?.level || 1}</div>
+                <div className="text-sm font-bold text-white">{userProfile?.username || 'Player'}</div>
                 {/* XP Bar */}
-                <div className="w-20 h-1.5 bg-gray-700 rounded-full mt-1">
-                  <div className="h-full bg-cyan-400 rounded-full w-[60%] shadow-[0_0_5px_#00f3ff]"></div>
+                <div className="w-20 h-1.5 bg-gray-700 rounded-full mt-1 overflow-hidden">
+                  <div
+                    className="h-full bg-cyan-400 rounded-full shadow-[0_0_5px_#00f3ff]"
+                    style={{ width: `${(userProfile?.xp || 0) % 100}%` }}
+                  ></div>
                 </div>
               </div>
             </div>
 
             <div className="glass-panel p-2 flex flex-col items-center gap-1">
               <span className="text-xs text-cyan-400 font-bold">STREAK</span>
-              <span className="text-lg font-bold text-white">🔥 12</span>
+              <span className="text-lg font-bold text-white">🔥 {userProfile?.streak || 0}</span>
             </div>
           </div>
 
           {/* Bottom Bar */}
           <div className="flex justify-between items-end pointer-events-auto pb-6">
-            <button className="glass-panel p-4 rounded-full text-white hover:bg-white/10 transition-colors">
+            <button
+              onClick={() => router.push('/profile')}
+              className="glass-panel p-4 rounded-full text-white hover:bg-white/10 transition-colors"
+            >
               <FaBoxOpen size={24} />
             </button>
 
@@ -130,33 +167,14 @@ export default function Home() {
             exit={{ opacity: 0, scale: 0.9 }}
             className="absolute inset-0 z-50"
           >
-            <ARView onClose={() => setShowAR(false)} onCapture={handleCapture} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Profile Modal Overlay */}
-      <AnimatePresence>
-        {showProfile && (
-          <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            className="absolute inset-x-0 bottom-0 h-[80vh] glass-panel z-40 rounded-t-3xl p-6 pointer-events-auto"
-          >
-            <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6" onClick={() => setShowProfile(false)} />
-            <h2 className="text-2xl font-bold mb-4 neon-text-purple">Agent Profile</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-black/40 p-4 rounded-xl border border-white/10">
-                <div className="text-gray-400 text-xs uppercase">Total XP</div>
-                <div className="text-2xl font-bold text-white">12,450</div>
-              </div>
-              <div className="bg-black/40 p-4 rounded-xl border border-white/10">
-                <div className="text-gray-400 text-xs uppercase">Orbs Found</div>
-                <div className="text-2xl font-bold text-cyan-400">84</div>
-              </div>
-            </div>
-            {/* More profile content... */}
+            <ARView
+              onClose={() => {
+                setShowAR(false);
+                setSelectedOrb(undefined);
+              }}
+              onCapture={handleCapture}
+              orb={selectedOrb}
+            />
           </motion.div>
         )}
       </AnimatePresence>

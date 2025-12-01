@@ -3,16 +3,19 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import BrandOrb from './BrandOrb';
 import { IoMdClose } from 'react-icons/io';
+import { BrandOrb as BrandOrbType } from '@/lib/firebaseService';
 
 interface ARViewProps {
     onClose: () => void;
     onCapture: () => void;
+    orb?: BrandOrbType;
 }
 
-export default function ARView({ onClose, onCapture }: ARViewProps) {
+export default function ARView({ onClose, onCapture, orb }: ARViewProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [permissionGranted, setPermissionGranted] = useState(false);
     const [cameraError, setCameraError] = useState(false);
+    const [captured, setCaptured] = useState(false);
 
     useEffect(() => {
         async function startCamera() {
@@ -40,6 +43,13 @@ export default function ARView({ onClose, onCapture }: ARViewProps) {
         };
     }, []);
 
+    const handleCapture = () => {
+        setCaptured(true);
+        setTimeout(() => {
+            onCapture();
+        }, 1500);
+    };
+
     // Fallback for no camera (Simulation Mode)
     const showFallback = cameraError || !permissionGranted;
 
@@ -66,7 +76,9 @@ export default function ARView({ onClose, onCapture }: ARViewProps) {
                     <pointLight position={[10, 10, 10]} />
 
                     {/* Floating BrandOrb to Capture */}
-                    <BrandOrb position={[0, 0, 0]} scale={1.5} />
+                    {!captured && (
+                        <BrandOrb position={[0, 0, 0]} scale={1.5} />
+                    )}
                 </Canvas>
             </div>
 
@@ -80,13 +92,18 @@ export default function ARView({ onClose, onCapture }: ARViewProps) {
 
                 <div className="flex flex-col items-center gap-4 pointer-events-auto">
                     <div className="text-white text-center drop-shadow-md">
-                        <h2 className="text-xl font-bold neon-text-blue">BrandOrb Detected!</h2>
-                        <p className="text-sm opacity-80">Tap the button to capture</p>
+                        <h2 className="text-xl font-bold neon-text-blue">
+                            {orb ? `${orb.rarity.toUpperCase()} ORB` : 'BrandOrb Detected!'}
+                        </h2>
+                        <p className="text-sm opacity-80">
+                            {captured ? 'Capturing...' : 'Tap the button to capture'}
+                        </p>
                     </div>
 
                     <button
-                        onClick={onCapture}
-                        className="w-20 h-20 rounded-full border-4 border-white/50 bg-white/20 backdrop-blur-md flex items-center justify-center active:scale-95 transition-transform"
+                        onClick={handleCapture}
+                        disabled={captured}
+                        className={`w-20 h-20 rounded-full border-4 border-white/50 bg-white/20 backdrop-blur-md flex items-center justify-center active:scale-95 transition-transform ${captured ? 'scale-0 opacity-0' : ''}`}
                     >
                         <div className="w-14 h-14 bg-white rounded-full"></div>
                     </button>
