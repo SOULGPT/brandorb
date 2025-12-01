@@ -5,7 +5,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { createRoot } from 'react-dom/client';
 import { Canvas } from '@react-three/fiber';
 import BrandOrb from './BrandOrb';
-import AnimatedGameWorld from './AnimatedGameWorld';
+import SimpleGameWorld from './SimpleGameWorld';
 import { getNearbyBrandOrbs, BrandOrb as BrandOrbType } from '@/lib/firebaseService';
 import { useAuth } from '@/contexts/AuthContext';
 import { FaMap, FaGlobe } from 'react-icons/fa';
@@ -189,7 +189,7 @@ export default function GameMap({ onOrbClick }: GameMapProps) {
             </div>
 
             {useMockMap ? (
-                <AnimatedGameWorld orbs={orbs} onOrbClick={onOrbClick} />
+                <SimpleGameWorld orbs={orbs} onOrbClick={onOrbClick} />
             ) : (
                 <div ref={mapContainer} className="w-full h-full bg-gray-900" />
             )}
