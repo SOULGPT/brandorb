@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { getAntiCheatLogs, AntiCheatLog, banUser } from '@/lib/firebaseService';
-import { FaUserShield, FaExclamationTriangle, FaBan, FaCheckCircle } from 'react-icons/fa';
+import { getAntiCheatLogs, AntiCheatLog, banUser, spawnBrandOrb } from '@/lib/firebaseService';
+import { FaUserShield, FaExclamationTriangle, FaBan, FaCheckCircle, FaMapMarkerAlt } from 'react-icons/fa';
+import { GeoPoint } from 'firebase/firestore';
 
 export default function AdminDashboard() {
     const { user, userProfile } = useAuth();
@@ -58,6 +59,106 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
+                {/* Drop Item Section */}
+                <div className="lg:col-span-3 bg-gray-800 border border-gray-700 rounded-2xl p-6 mb-8">
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                        <FaMapMarkerAlt className="text-purple-400" />
+                        World Management
+                    </h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 className="text-lg font-bold mb-4 text-gray-300">Drop New Item</h3>
+                            <form onSubmit={async (e) => {
+                                e.preventDefault();
+                                const form = e.target as HTMLFormElement;
+                                const lat = Number((form.elements.namedItem('lat') as HTMLInputElement).value);
+                                const lng = Number((form.elements.namedItem('lng') as HTMLInputElement).value);
+                                const type = (form.elements.namedItem('type') as HTMLSelectElement).value;
+                                const rarity = (form.elements.namedItem('rarity') as HTMLSelectElement).value;
+                                const maxCollections = Number((form.elements.namedItem('maxCollections') as HTMLInputElement).value);
+
+                                try {
+                                    await spawnBrandOrb({
+                                        type: type as any,
+                                        position: new GeoPoint(lat, lng),
+                                        brandId: 'admin_drop',
+                                        campaignId: 'admin_drop',
+                                        rarity: rarity as any,
+                                        xpReward: rarity === 'legendary' ? 500 : rarity === 'epic' ? 250 : rarity === 'rare' ? 100 : 50,
+                                        maxCollections: maxCollections
+                                    });
+                                    alert('Item dropped successfully!');
+                                    form.reset();
+                                } catch (error) {
+                                    console.error("Error dropping item:", error);
+                                    alert('Failed to drop item');
+                                }
+                            }} className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs text-gray-500 uppercase font-bold mb-1">Latitude</label>
+                                        <input name="lat" type="number" step="any" required className="w-full bg-black/30 border border-gray-600 rounded p-2 text-white" placeholder="51.505" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-500 uppercase font-bold mb-1">Longitude</label>
+                                        <input name="lng" type="number" step="any" required className="w-full bg-black/30 border border-gray-600 rounded p-2 text-white" placeholder="-0.09" />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs text-gray-500 uppercase font-bold mb-1">Type</label>
+                                        <select name="type" className="w-full bg-black/30 border border-gray-600 rounded p-2 text-white">
+                                            <option value="brandorb">Brand Orb</option>
+                                            <option value="reward_box">Reward Box</option>
+                                            <option value="mystery_clue">Mystery Clue</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-500 uppercase font-bold mb-1">Rarity</label>
+                                        <select name="rarity" className="w-full bg-black/30 border border-gray-600 rounded p-2 text-white">
+                                            <option value="common">Common</option>
+                                            <option value="rare">Rare</option>
+                                            <option value="epic">Epic</option>
+                                            <option value="legendary">Legendary</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs text-gray-500 uppercase font-bold mb-1">Max Collections (Scarcity)</label>
+                                    <input name="maxCollections" type="number" min="1" defaultValue="1" className="w-full bg-black/30 border border-gray-600 rounded p-2 text-white" />
+                                    <p className="text-xs text-gray-500 mt-1">Number of users who can collect this item before it disappears.</p>
+                                </div>
+
+                                <button type="button" onClick={() => {
+                                    if (navigator.geolocation) {
+                                        navigator.geolocation.getCurrentPosition(pos => {
+                                            (document.getElementsByName('lat')[0] as HTMLInputElement).value = pos.coords.latitude.toString();
+                                            (document.getElementsByName('lng')[0] as HTMLInputElement).value = pos.coords.longitude.toString();
+                                        });
+                                    }
+                                }} className="text-sm text-cyan-400 hover:text-cyan-300 underline mb-2">
+                                    Use My Current Location
+                                </button>
+
+                                <button type="submit" className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition-colors">
+                                    Drop Item
+                                </button>
+                            </form>
+                        </div>
+
+                        <div className="bg-black/20 rounded-xl p-4 flex items-center justify-center border border-gray-700/50 border-dashed">
+                            <div className="text-center text-gray-500">
+                                <FaMapMarkerAlt className="text-4xl mx-auto mb-2 opacity-50" />
+                                <p>Map Preview Coming Soon</p>
+                                <p className="text-xs">Use coordinates for precise drops</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Main Logs List */}
                     <div className="lg:col-span-2 space-y-6">
@@ -80,8 +181,8 @@ export default function AdminDashboard() {
                                         <div className="flex justify-between items-start mb-2">
                                             <div className="flex items-center gap-3">
                                                 <div className={`p-2 rounded-lg ${log.severity === 'critical' ? 'bg-red-500/20 text-red-400' :
-                                                        log.severity === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                                                            'bg-yellow-500/20 text-yellow-400'
+                                                    log.severity === 'high' ? 'bg-orange-500/20 text-orange-400' :
+                                                        'bg-yellow-500/20 text-yellow-400'
                                                     }`}>
                                                     <FaExclamationTriangle />
                                                 </div>
@@ -91,8 +192,8 @@ export default function AdminDashboard() {
                                                 </div>
                                             </div>
                                             <span className={`text-xs font-bold px-2 py-1 rounded uppercase ${log.severity === 'critical' ? 'bg-red-500/10 text-red-500' :
-                                                    log.severity === 'high' ? 'bg-orange-500/10 text-orange-500' :
-                                                        'bg-yellow-500/10 text-yellow-500'
+                                                log.severity === 'high' ? 'bg-orange-500/10 text-orange-500' :
+                                                    'bg-yellow-500/10 text-yellow-500'
                                                 }`}>
                                                 {log.severity}
                                             </span>
@@ -128,8 +229,8 @@ export default function AdminDashboard() {
                                     <div>
                                         <label className="text-xs text-gray-500 uppercase font-bold">Severity</label>
                                         <div className={`inline-block px-3 py-1 rounded-full text-sm font-bold mt-1 ${selectedLog.severity === 'critical' ? 'bg-red-500/20 text-red-400' :
-                                                selectedLog.severity === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                                                    'bg-yellow-500/20 text-yellow-400'
+                                            selectedLog.severity === 'high' ? 'bg-orange-500/20 text-orange-400' :
+                                                'bg-yellow-500/20 text-yellow-400'
                                             }`}>
                                             {selectedLog.severity.toUpperCase()}
                                         </div>

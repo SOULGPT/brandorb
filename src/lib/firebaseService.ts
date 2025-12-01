@@ -57,6 +57,7 @@ export interface BrandOrb {
     spawnTime: Date;
     expiryTime?: Date;
     collectedBy: string[]; // user IDs
+    maxCollections?: number; // How many users can collect this (default 1)
 }
 
 export interface Campaign {
@@ -337,16 +338,35 @@ export const collectBrandOrb = async (orbId: string, userId: string) => {
 
     if (orbDoc.exists()) {
         const orb = orbDoc.data() as BrandOrb;
+        const maxCollections = orb.maxCollections || 1; // Default to 1 (first come first served)
 
-        // Check if already collected
+        // Check if already collected by this user
         if (orb.collectedBy?.includes(userId)) {
-            throw new Error('Already collected this BrandOrb');
+            throw new Error('You have already collected this item');
+        }
+
+        // Check if max collections reached
+        if ((orb.collectedBy?.length || 0) >= maxCollections) {
+            // Deactivate orb if limit reached (should have been done, but double check)
+            if (orb.active) {
+                await updateDoc(orbRef, { active: false });
+            }
+            throw new Error('This item has already been claimed by others');
         }
 
         // Add user to collected list
-        await updateDoc(orbRef, {
-            collectedBy: [...(orb.collectedBy || []), userId]
-        });
+        const newCollectedBy = [...(orb.collectedBy || []), userId];
+
+        const updates: any = {
+            collectedBy: newCollectedBy
+        };
+
+        // If this collection hits the limit, deactivate the orb
+        if (newCollectedBy.length >= maxCollections) {
+            updates.active = false;
+        }
+
+        await updateDoc(orbRef, updates);
 
         // Award XP
         await updateUserXP(userId, orb.xpReward);
