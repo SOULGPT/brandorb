@@ -25,7 +25,7 @@ export default function GameMap({ onOrbClick }: GameMapProps) {
     const [orbs, setOrbs] = useState<BrandOrbType[]>([]);
     const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
     const { user } = useAuth();
-    const [useMockMap, setUseMockMap] = useState(false);
+    const [useMockMap, setUseMockMap] = useState(true); // Default to Mock Map for immediate visibility
     const [mapError, setMapError] = useState(false);
 
     // Get user location
@@ -144,8 +144,8 @@ export default function GameMap({ onOrbClick }: GameMapProps) {
                 root.render(
                     <div className="relative w-12 h-12">
                         <div className={`absolute inset-0 rounded-full opacity-50 animate-pulse ${orb.rarity === 'legendary' ? 'bg-yellow-500' :
-                                orb.rarity === 'epic' ? 'bg-purple-500' :
-                                    orb.rarity === 'rare' ? 'bg-blue-500' : 'bg-green-500'
+                            orb.rarity === 'epic' ? 'bg-purple-500' :
+                                orb.rarity === 'rare' ? 'bg-blue-500' : 'bg-green-500'
                             }`}></div>
                         <Canvas camera={{ position: [0, 0, 3] }} gl={{ alpha: true }}>
                             <ambientLight intensity={0.8} />
@@ -218,8 +218,8 @@ export default function GameMap({ onOrbClick }: GameMapProps) {
                             >
                                 <div className="w-12 h-12 bg-white rounded-full border-4 border-gray-800 flex items-center justify-center shadow-lg relative overflow-hidden">
                                     <div className={`absolute top-0 left-0 w-full h-1/2 border-b-4 border-gray-800 ${orb.rarity === 'legendary' ? 'bg-yellow-500' :
-                                            orb.rarity === 'epic' ? 'bg-purple-500' :
-                                                orb.rarity === 'rare' ? 'bg-blue-500' : 'bg-red-500'
+                                        orb.rarity === 'epic' ? 'bg-purple-500' :
+                                            orb.rarity === 'rare' ? 'bg-blue-500' : 'bg-red-500'
                                         }`}></div>
                                     <div className="w-4 h-4 bg-white border-4 border-gray-800 rounded-full z-10"></div>
                                 </div>
