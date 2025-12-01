@@ -17,8 +17,14 @@ export const metadata: Metadata = {
   title: "BrandOrb - Discover Brands. Unlock Rewards.",
   description: "A gamified real-world marketing adventure. Explore your world, discover floating BrandOrbs, solve clues, and unlock brand rewards through AR.",
   manifest: "/manifest.json",
+};
+
+export const viewport = {
   themeColor: "#00d4ff",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({

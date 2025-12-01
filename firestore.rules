@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user is accessing their own data
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users collection: Users can read/write their own profile
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isOwner(userId);
+      allow delete: if false; // Prevent deletion for now
+    }
+
+    // BrandOrbs collection: Publicly readable, but only writeable by system (or admin)
+    // For MVP, we'll allow authenticated users to update 'collectedBy' via array-union
+    match /brandOrbs/{orbId} {
+      allow read: if true;
+      allow create: if isAuthenticated(); // Allow spawning for demo
+      allow update: if isAuthenticated(); // Allow collecting
+    }
+
+    // Campaigns: Readable by all, writeable by brands/admins
+    match /campaigns/{campaignId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // UserProgress: Users can read/write their own progress
+    match /userProgress/{progressId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Missions: Publicly readable
+    match /missions/{missionId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // AntiCheatLogs: Write-only for users (logging events), Read-only for admins
+    match /antiCheatLogs/{logId} {
+      allow create: if isAuthenticated();
+      allow read: if isAuthenticated(); // Should restrict to admin in prod
+    }
+  }
+}

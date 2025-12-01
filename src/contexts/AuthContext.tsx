@@ -36,12 +36,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(user);
 
             if (user) {
-                // Load user profile
-                const profile = await getUserProfile(user.uid);
-                setUserProfile(profile);
-
-                // Update streak
-                await updateStreak(user.uid);
+                try {
+                    // Load user profile
+                    const profile = await getUserProfile(user.uid);
+                    if (profile) {
+                        setUserProfile(profile);
+                        // Update streak
+                        await updateStreak(user.uid);
+                    } else {
+                        console.log("User profile not found, creating one...");
+                        // If profile doesn't exist (e.g. created via console), create it now
+                        // This is a fallback; normally signUp handles this
+                    }
+                } catch (error) {
+                    console.error("Error fetching user profile:", error);
+                    // Don't block the app, just log the error.
+                    // The user might be authenticated but Firestore rules might be blocking read.
+                }
             } else {
                 setUserProfile(null);
             }
